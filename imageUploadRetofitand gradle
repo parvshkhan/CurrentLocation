@@ -1,0 +1,175 @@
+  RequestBody rq1 = RequestBody.create(MediaType.parse("text/plain"), mFirstName.getText().toString());
+                RequestBody rq2= RequestBody.create(MediaType.parse("text/plain"), mLastName.getText().toString());
+                RequestBody rq3= RequestBody.create(MediaType.parse("text/plain"), mEmail.getText().toString()+"");
+                final RequestBody rq4= RequestBody.create(MediaType.parse("text/plain"), countryCodePicker.getFullNumberWithPlus()+mPhNum.getText().toString());
+                RequestBody rq5 = RequestBody.create(MediaType.parse("text/plain"), mPassword.getText().toString()+"");
+                if(file!=null)
+                    rq6 = RequestBody.create(MediaType.parse("image/*"), file);
+                RequestBody rq7 = RequestBody.create(MediaType.parse("text/plain"), token);
+
+
+
+                RequestBody rq8 = null;
+                try {
+                    rq8 = RequestBody.create(MediaType.parse("text/plain"), CommonUtility.getReferCode(getApplicationContext()));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                RestClient.GitApiInterface restClient = RestClient.getClient();
+
+                restClient.SignUp(rq6,rq1,rq2,rq3,rq4,rq5,rq7,rq8).enqueue(new Callback<RegisterResponse>() {
+                    @Override
+                    public void onResponse(Call<RegisterResponse> call, Response<RegisterResponse> response) {
+                        CommonUtility.hide(SignUpActivity.this);
+                        Log.i("response-->>",response.toString());
+
+                        CommonUtility.hide(SignUpActivity.this);
+                        if(response.body().getIsSuccess())
+                        {
+                            CommonUtility.setOtpVerfiy(getApplicationContext(),true);
+
+                            CommonUtility.setUserId(getApplicationContext(),response.body().getPayload().getId()+"");
+
+                            CommonUtility.setFirstLogin(getApplicationContext(),false);
+
+                            CommonUtility.setName(getApplicationContext(),mFirstName.getText().toString()+" "+mLastName.getText().toString());
+                            CommonUtility.setPhnNum(getApplicationContext(),countryCodePicker.getFullNumberWithPlus()+mPhNum.getText().toString());
+
+
+                            Intent intent = new Intent(getApplicationContext(),PhoneActivity.class);
+                            intent.putExtra("number",countryCodePicker.getFullNumberWithPlus()+mPhNum.getText().toString());
+                            intent.putExtra("id",response.body().getPayload().getId());
+                            startActivity(intent);
+                            finish();
+                        }
+                        else
+                        {
+
+                            Toast.makeText(SignUpActivity.this, "Already Register", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<RegisterResponse> call, Throwable t) {
+                        Log.i("error",t.getMessage());
+                        CommonUtility.hide(SignUpActivity.this);
+
+                    }
+                });
+
+
+
+            }
+            else
+            {
+                Toast.makeText(getApplicationContext(),"Please Upload Image",Toast.LENGTH_SHORT).show();
+            }
+
+
+
+
+        }
+        
+        ///////////////////////////////////////////////////////////////////////////////////
+        
+
+public class RestClient {
+
+
+
+    public static GitApiInterface getClient() {
+
+
+        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+
+        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+        httpClient.addInterceptor(logging);
+
+        Gson gson = new GsonBuilder()
+                .setLenient()
+                .create();
+
+
+        String baseUrl = "http://18.217.234.39/NXSPOT/";
+        Retrofit retrofit = new Retrofit.Builder()
+                .client(httpClient.build())
+
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .baseUrl(baseUrl)
+                .build();
+
+
+        GitApiInterface gitApiInterface = retrofit.create(GitApiInterface.class);
+
+        return gitApiInterface;
+
+    }
+
+
+    public interface GitApiInterface {
+        @Multipart
+        @POST("v1.1/UserRegister")
+        Call<RegisterResponse> registerResponse(@Body HashMap<String, String> hashMap);
+
+        @Multipart
+        @POST("v1.1/UserRegister")
+        Call<RegisterResponse> SignUp (@Part("image\"; filename=\"pp.png\" ") RequestBody file , @Part("name") RequestBody fname1, @Part("lastname") RequestBody fname2, @Part("email") RequestBody fname3, @Part("phone") RequestBody fname4,@Part("password") RequestBody fname5,@Part("token") RequestBody fname6,@Part("referencecode") RequestBody fname7);
+
+        @Multipart
+        @POST("v1.1/UpdateProfilePic")
+        Call<ImageUpdateModel> UpdateImage (@Part("image\"; filename=\"pp.png\" ") RequestBody file , @Part("customerId") RequestBody fname1);
+
+
+        @POST("v1.1/insertVehicle")
+        Call<Vehicleresponse> vehicleResponse(@Body HashMap<String, String> hashMap);
+
+        @POST("v1.1/userLogin")
+        Call<LoginResponse> loginResponse(@Body HashMap<String, String> hashMap);
+
+
+        @POST("v1.1/NeedASpot")
+        Call<SpotResponse> NeedSpot(@Body HashMap<String, String> hashMap);
+
+
+        @POST("v1.1/leaveASpot")
+        Call<ResponseLeaveSpot> LeaveSpot(@Body HashMap<String, String> hashMap);
+
+
+
+
+        @POST("v1.1/getPostRequests")
+        Call<ResponseLeaveSpot> LeaveSpotPostSchedule(@Body HashMap<String, String> hashMap);
+
+
+
+
+
+
+        @POST("v1.1/getPendingSchedule")
+        Call<ResponsePostdata> pendingPostScheduledata(@Body HashMap<String, String> hashMap);
+
+
+
+
+
+
+        @POST("v1.1/insertNeedASpot")
+        Call<LoginResponse> insertNeedSpot(@Body HashMap<String, String> hashMap);
+
+        @FormUrlEncoded
+        @POST("/nxspotApi/v1.1/sendingpush.php")
+        Call<SendParkingRequest> sendParking(@Field("customerId") String title);
+
+    
+
+    }
+}
+
+   ////////////////////////
+     compile 'com.squareup.okhttp3:logging-interceptor:3.6.0'
+    compile 'com.squareup.retrofit2:retrofit:2.2.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.2.0'
+        
+        .
